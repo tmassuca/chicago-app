@@ -207,6 +207,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="modal-overlay" id="date-modal" onclick="closeModal(event)">
   <div class="modal-sheet">
     <h3 id="modal-title">Definir data</h3>
+    <p style="font-size:12px;color:#8e8e93;margin-bottom:12px">Os dias seguintes serão reorganizados automaticamente.</p>
     <input type="date" id="modal-date-input">
     <div class="btn-row">
       <button class="btn-cancel" onclick="closeModalDirect()">Cancelar</button>
@@ -310,20 +311,31 @@ function updateCountdown(){
 
 function updateTripDates(){
   const val = document.getElementById('trip-start').value;
-  state.tripStart = val;
+  if(!val) return;
+  cascadeDates(0, val);
   save();
   renderDays();
   updateCountdown();
 }
 
-function getDayDate(dayIndex){
-  if(!state.dates[dayIndex] && state.tripStart){
-    const d = new Date(state.tripStart+'T00:00:00');
-    d.setDate(d.getDate()+dayIndex);
-    return d.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+function cascadeDates(fromIndex, fromDateStr){
+  const base = new Date(fromDateStr+'T00:00:00');
+  for(let i = fromIndex; i < DAYS.length; i++){
+    const d = new Date(base);
+    d.setDate(base.getDate() + (i - fromIndex));
+    state.dates[i] = d.toISOString().split('T')[0];
   }
+  if(fromIndex === 0) state.tripStart = fromDateStr;
+}
+
+function getDayDate(dayIndex){
   if(state.dates[dayIndex]){
     const d = new Date(state.dates[dayIndex]+'T00:00:00');
+    return d.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  }
+  if(state.tripStart){
+    const d = new Date(state.tripStart+'T00:00:00');
+    d.setDate(d.getDate()+dayIndex);
     return d.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
   }
   return null;
@@ -384,10 +396,12 @@ function toggleDay(i){
 function openDateModal(dayIndex, e){
   e.stopPropagation();
   currentModalDay = dayIndex;
-  document.getElementById('modal-title').textContent = `Data — Dia ${dayIndex+1}: ${DAYS[dayIndex].title}`;
+  document.getElementById('modal-title').textContent = `Dia ${dayIndex+1}: ${DAYS[dayIndex].title}`;
+  // Sugere a data atual do dia, ou calcula a partir do início
   const existing = state.dates[dayIndex];
-  if(existing) document.getElementById('modal-date-input').value = existing;
-  else if(state.tripStart){
+  if(existing){
+    document.getElementById('modal-date-input').value = existing;
+  } else if(state.tripStart){
     const d = new Date(state.tripStart+'T00:00:00');
     d.setDate(d.getDate()+dayIndex);
     document.getElementById('modal-date-input').value = d.toISOString().split('T')[0];
@@ -400,9 +414,12 @@ function closeModalDirect(){document.getElementById('date-modal').classList.remo
 function saveModalDate(){
   const val = document.getElementById('modal-date-input').value;
   if(val && currentModalDay!==null){
-    state.dates[currentModalDay]=val;
+    cascadeDates(currentModalDay, val);
+    // Sincroniza o input de data de início se o dia 0 mudou
+    if(currentModalDay===0) document.getElementById('trip-start').value = val;
     save();
     renderDays();
+    updateCountdown();
   }
   closeModalDirect();
 }
