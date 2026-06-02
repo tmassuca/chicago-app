@@ -296,7 +296,7 @@ function showTab(id, btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
-  if(id==='mapa') initMap();
+  if(id==='mapa'){ initMap(); }
 }
 
 function updateCountdown(){
@@ -458,6 +458,9 @@ function onDragEnd(){
     save();
     renderDays();
     updateCountdown();
+    // rebuild map filters with new order
+    const mapVisible = document.getElementById('tab-mapa').classList.contains('active');
+    if(mapVisible) initMap();
   }
 }
 
@@ -501,35 +504,65 @@ function saveModalDate(){
   closeModalDirect();
 }
 
+function getDayDateShort(displayPos){
+  if(state.dates[displayPos]){
+    const d = new Date(state.dates[displayPos]+'T00:00:00');
+    return d.toLocaleDateString('pt-BR',{day:'numeric',month:'short'});
+  }
+  if(state.tripStart){
+    const d = new Date(state.tripStart+'T00:00:00');
+    d.setDate(d.getDate()+displayPos);
+    return d.toLocaleDateString('pt-BR',{day:'numeric',month:'short'});
+  }
+  return null;
+}
+
 function initMap(){
-  const all = DAYS.flatMap((d,i)=>d.places.map(p=>({...p,day:i+1})));
-  const first = all[0];
   const frame = document.getElementById('map-frame');
-  if(!frame.src || frame.src===''){
+  const orderedDays = state.order.map((dayIdx, pos) => ({...DAYS[dayIdx], displayPos: pos}));
+  const first = orderedDays[0].places[0];
+
+  if(!frame.src || frame.src==='about:blank' || frame.src===''){
     frame.src=`https://maps.google.com/maps?q=${first.lat},${first.lng}&z=13&output=embed`;
   }
+
   const legend = document.getElementById('map-legend-items');
   legend.innerHTML = [
     {color:'#1D9E75',label:'Pontos do roteiro'},
     {color:'#EF9F27',label:'Restaurantes'}
   ].map(l=>`<div class="legend-item"><div class="legend-dot" style="background:${l.color}"></div>${l.label}</div>`).join('');
 
+  // Sempre reconstrói os filtros para refletir ordem atual e datas
   const filters = document.getElementById('map-filters');
-  if(!filters.innerHTML){
-    ['Todos',...DAYS.map((_,i)=>`Dia ${i+1}`),'Restaurantes'].forEach((f,i)=>{
-      const btn = document.createElement('button');
-      btn.className='filter-btn'+(i===0?' active':'');
-      btn.textContent=f;
-      btn.onclick=()=>{
-        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        if(f==='Todos'){frame.src=`https://maps.google.com/maps?q=${first.lat},${first.lng}&z=13&output=embed`;}
-        else if(f==='Restaurantes'){frame.src=`https://maps.google.com/maps?q=${RESTAURANTS[0].lat},${RESTAURANTS[0].lng}&z=14&output=embed`;}
-        else{const d=DAYS[i-1];if(d&&d.places[0]){const p=d.places[0];frame.src=`https://maps.google.com/maps?q=${p.lat},${p.lng}&z=15&output=embed`;}}
+  filters.innerHTML = '';
+
+  const filterDefs = [
+    {label:'Todos', action:()=>{ frame.src=`https://maps.google.com/maps?q=${first.lat},${first.lng}&z=13&output=embed`; }},
+    ...orderedDays.map((day, pos)=>{
+      const dateShort = getDayDateShort(pos);
+      const label = dateShort ? `Dia ${pos+1} · ${dateShort}` : `Dia ${pos+1}`;
+      return {
+        label,
+        action:()=>{
+          const p = day.places[0];
+          frame.src=`https://maps.google.com/maps?q=${p.lat},${p.lng}&z=15&output=embed`;
+        }
       };
-      filters.appendChild(btn);
-    });
-  }
+    }),
+    {label:'Restaurantes', action:()=>{ frame.src=`https://maps.google.com/maps?q=${RESTAURANTS[0].lat},${RESTAURANTS[0].lng}&z=14&output=embed`; }}
+  ];
+
+  filterDefs.forEach((f, i)=>{
+    const btn = document.createElement('button');
+    btn.className='filter-btn'+(i===0?' active':'');
+    btn.textContent=f.label;
+    btn.onclick=()=>{
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      f.action();
+    };
+    filters.appendChild(btn);
+  });
 }
 
 function setMealView(v, btn){
