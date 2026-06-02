@@ -1,4 +1,4 @@
-const CACHE = 'chicago-v2';
+const CACHE = 'chicago-v3';
 const ASSETS = [
   '/chicago-app/',
   '/chicago-app/index.html',
