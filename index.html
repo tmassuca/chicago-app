@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Chicago 2026">
+<meta name="theme-color" content="#1D9E75">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Chicago 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1c1c1e;min-height:100vh;padding-bottom:80px}
+.topbar{background:#fff;border-bottom:1px solid #e5e5ea;padding:14px 16px 10px;position:sticky;top:0;z-index:100}
+.topbar h1{font-size:20px;font-weight:600;color:#1c1c1e}
+.topbar p{font-size:13px;color:#8e8e93;margin-top:2px}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #e5e5ea;position:sticky;top:61px;z-index:99}
+.tab{flex:1;padding:10px 4px;font-size:12px;font-weight:500;color:#8e8e93;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:#1D9E75;border-bottom-color:#1D9E75}
+.tab i{display:block;font-size:20px;margin-bottom:2px}
+.section{display:none;padding:16px}
+.section.active{display:block}
+
+/* ROTEIRO */
+.date-banner{background:#1D9E75;border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.date-banner span{color:#fff;font-size:13px;font-weight:500}
+.date-banner input[type=date]{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:8px;color:#fff;font-size:13px;padding:4px 8px;outline:none;width:140px}
+.date-banner input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1)}
+.day-card{background:#fff;border-radius:12px;border:1px solid #e5e5ea;margin-bottom:12px;overflow:hidden}
+.day-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.day-num{width:32px;height:32px;border-radius:50%;background:#1D9E75;color:#fff;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.day-info{flex:1;margin-left:12px}
+.day-info h3{font-size:15px;font-weight:600;color:#1c1c1e}
+.day-info p{font-size:12px;color:#8e8e93;margin-top:1px}
+.day-date-badge{font-size:11px;background:#f0faf5;color:#0F6E56;border:1px solid #5DCAA5;border-radius:6px;padding:3px 8px;white-space:nowrap}
+.day-date-badge.unset{background:#f5f5f7;color:#8e8e93;border-color:#e5e5ea}
+.chevron{font-size:16px;color:#8e8e93;transition:transform .2s}
+.chevron.open{transform:rotate(180deg)}
+.day-body{display:none;border-top:1px solid #f0f0f5;padding:12px 16px}
+.day-body.open{display:block}
+.place-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f5}
+.place-item:last-child{border-bottom:none}
+.place-icon{width:28px;height:28px;border-radius:8px;background:#f0faf5;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.place-info h4{font-size:13px;font-weight:600;color:#1c1c1e}
+.place-info p{font-size:12px;color:#8e8e93;margin-top:2px;line-height:1.4}
+.place-info .tip{font-size:11px;color:#0F6E56;background:#f0faf5;border-radius:4px;padding:2px 6px;display:inline-block;margin-top:4px}
+.maps-btn{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:#1D9E75;background:#f0faf5;border:1px solid #9FE1CB;border-radius:6px;padding:3px 8px;margin-top:6px;cursor:pointer;text-decoration:none}
+.day-set-date{width:100%;margin-top:12px;padding:8px;background:#f0faf5;border:1px solid #9FE1CB;border-radius:8px;color:#0F6E56;font-size:13px;font-weight:500;cursor:pointer}
+
+/* MAPA */
+.map-wrap{border-radius:12px;overflow:hidden;border:1px solid #e5e5ea;background:#fff;margin-bottom:16px}
+.map-frame{width:100%;height:360px;border:none}
+.map-legend{padding:12px 16px}
+.map-legend h3{font-size:13px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.legend-item{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;color:#1c1c1e}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filter-btn{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid #e5e5ea;background:#fff;color:#8e8e93;cursor:pointer;font-weight:500}
+.filter-btn.active{background:#1D9E75;border-color:#1D9E75;color:#fff}
+
+/* ALIMENTAÇÃO */
+.section-title{font-size:16px;font-weight:600;color:#1c1c1e;margin-bottom:12px}
+.olivia-card{background:#fff;border-radius:12px;border:1px solid #e5e5ea;padding:16px;margin-bottom:16px}
+.olivia-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.olivia-avatar{width:40px;height:40px;border-radius:50%;background:#f0faf5;display:flex;align-items:center;justify-content:center;font-size:22px}
+.olivia-header div h3{font-size:15px;font-weight:600}
+.olivia-header div p{font-size:12px;color:#8e8e93}
+.meal-toggle{display:flex;background:#f5f5f7;border-radius:8px;padding:2px;margin-bottom:14px}
+.meal-toggle button{flex:1;padding:6px;border:none;background:none;border-radius:6px;font-size:13px;font-weight:500;color:#8e8e93;cursor:pointer;transition:all .15s}
+.meal-toggle button.active{background:#fff;color:#1c1c1e;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.nutrient-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #f0f0f5}
+.nutrient-row:last-child{border-bottom:none}
+.nutrient-color{width:4px;height:36px;border-radius:2px;flex-shrink:0}
+.nutrient-label{flex:1}
+.nutrient-label h4{font-size:14px;font-weight:600;color:#1c1c1e}
+.nutrient-label p{font-size:11px;color:#8e8e93}
+.nutrient-amount{text-align:right}
+.nutrient-amount span{font-size:20px;font-weight:600;color:#1c1c1e}
+.nutrient-amount p{font-size:11px;color:#8e8e93}
+.serving-control{display:flex;align-items:center;gap:12px;background:#f5f5f7;border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.serving-control label{font-size:13px;color:#8e8e93;flex:1}
+.serving-control input[type=range]{flex:2;accent-color:#1D9E75}
+.serving-control span{font-size:14px;font-weight:600;color:#1D9E75;min-width:20px;text-align:right}
+.summary-row{background:#f0faf5;border-radius:10px;padding:12px 14px;margin-top:4px}
+.summary-row h4{font-size:12px;color:#0F6E56;font-weight:500;margin-bottom:6px}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.summary-stat{background:#fff;border-radius:8px;padding:8px 10px;border:1px solid #9FE1CB}
+.summary-stat p{font-size:11px;color:#8e8e93}
+.summary-stat span{font-size:16px;font-weight:600;color:#0F6E56}
+.food-log{background:#fff;border-radius:12px;border:1px solid #e5e5ea;padding:16px;margin-bottom:16px}
+.food-log h3{font-size:15px;font-weight:600;margin-bottom:12px}
+.log-entry{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0f0f5;font-size:13px}
+.log-entry:last-child{border-bottom:none}
+.log-entry .meal{color:#8e8e93}
+.log-entry .food{font-weight:500}
+.log-entry .check{color:#1D9E75;font-size:18px}
+.check-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px}
+.check-item{background:#f5f5f7;border:1px solid #e5e5ea;border-radius:8px;padding:8px 10px;cursor:pointer;transition:all .15s}
+.check-item.done{background:#f0faf5;border-color:#9FE1CB}
+.check-item p{font-size:11px;color:#8e8e93}
+.check-item h4{font-size:13px;font-weight:600;color:#1c1c1e;margin-top:1px}
+.check-item.done h4{color:#0F6E56}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e5ea;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;padding:8px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;border:none;background:none;cursor:pointer;color:#8e8e93;font-size:10px;font-weight:500}
+.nav-btn.active{color:#1D9E75}
+.nav-btn i{font-size:22px}
+
+/* Date picker modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:#fff;border-radius:16px 16px 0 0;padding:20px 16px 32px;width:100%}
+.modal-sheet h3{font-size:17px;font-weight:600;margin-bottom:16px}
+.modal-sheet input[type=date]{width:100%;padding:12px;border:1px solid #e5e5ea;border-radius:10px;font-size:16px;margin-bottom:12px;outline:none;color:#1c1c1e}
+.modal-sheet .btn-row{display:flex;gap:8px}
+.modal-sheet .btn-cancel{flex:1;padding:12px;border:1px solid #e5e5ea;border-radius:10px;background:#fff;font-size:15px;cursor:pointer}
+.modal-sheet .btn-save{flex:1;padding:12px;border:none;border-radius:10px;background:#1D9E75;color:#fff;font-size:15px;font-weight:600;cursor:pointer}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Chicago 2026 ✈️</h1>
+  <p id="trip-countdown">Calculando...</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('roteiro',this)"><i class="ti ti-calendar"></i>Roteiro</button>
+  <button class="tab" onclick="showTab('mapa',this)"><i class="ti ti-map-pin"></i>Mapa</button>
+  <button class="tab" onclick="showTab('alimentacao',this)"><i class="ti ti-apple"></i>Olivia</button>
+  <button class="tab" onclick="showTab('restaurantes',this)"><i class="ti ti-tools-kitchen-2"></i>Comer</button>
+</div>
+
+<!-- ROTEIRO -->
+<div id="tab-roteiro" class="section active">
+  <div class="date-banner">
+    <span>Início da viagem</span>
+    <input type="date" id="trip-start" onchange="updateTripDates()">
+  </div>
+  <div id="days-container"></div>
+</div>
+
+<!-- MAPA -->
+<div id="tab-mapa" class="section">
+  <div class="filter-row" id="map-filters"></div>
+  <div class="map-wrap">
+    <iframe id="map-frame" class="map-frame" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" src=""></iframe>
+  </div>
+  <div class="map-legend">
+    <h3>Legenda</h3>
+    <div id="map-legend-items"></div>
+  </div>
+</div>
+
+<!-- ALIMENTAÇÃO -->
+<div id="tab-alimentacao" class="section">
+  <div class="olivia-card">
+    <div class="olivia-header">
+      <div class="olivia-avatar">👶</div>
+      <div><h3>Guia nutricional da Olivia</h3><p>1 ano e 1 mês · Referência por refeição</p></div>
+    </div>
+
+    <div class="meal-toggle">
+      <button class="active" onclick="setMealView('single',this)">Por refeição</button>
+      <button onclick="setMealView('day',this)">Por dia</button>
+    </div>
+
+    <div class="serving-control">
+      <label>Porções hoje</label>
+      <input type="range" min="1" max="4" value="2" step="1" id="servings-slider" oninput="updateNutrients()">
+      <span id="servings-val">2</span>
+    </div>
+
+    <div id="nutrients-list"></div>
+    <div class="summary-row">
+      <h4>Resumo do dia</h4>
+      <div class="summary-grid" id="nutrient-summary"></div>
+    </div>
+  </div>
+
+  <div class="olivia-card">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:12px">Checklist refeições de hoje</h3>
+    <div class="check-grid" id="meal-checklist"></div>
+  </div>
+
+  <div class="olivia-card">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:4px">Dicas na viagem 🇺🇸</h3>
+    <div style="margin-top:10px">
+      <p style="font-size:13px;color:#3a3a3c;line-height:1.6;margin-bottom:8px">🛒 <b>Whole Foods</b> (830 N Michigan Ave) — papinhas orgânicas, snacks, frutas frescas</p>
+      <p style="font-size:13px;color:#3a3a3c;line-height:1.6;margin-bottom:8px">🎯 <b>Target</b> (1 S Canal St) — comida de bebê marca Earth's Best, água, fórmula</p>
+      <p style="font-size:13px;color:#3a3a3c;line-height:1.6;margin-bottom:8px">🍌 <b>Snacks seguros</b> — banana amassada, macarrão bem cozido, frango desfiado, queijo cottage</p>
+      <p style="font-size:13px;color:#3a3a3c;line-height:1.6">🍽️ <b>Restaurantes</b> — peça prato sem tempero forte ou sal. Beatrix tem cardápio infantil!</p>
+    </div>
+  </div>
+</div>
+
+<!-- RESTAURANTES -->
+<div id="tab-restaurantes" class="section">
+  <div id="restaurants-list"></div>
+</div>
+
+<!-- Modal data -->
+<div class="modal-overlay" id="date-modal" onclick="closeModal(event)">
+  <div class="modal-sheet">
+    <h3 id="modal-title">Definir data</h3>
+    <input type="date" id="modal-date-input">
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeModalDirect()">Cancelar</button>
+      <button class="btn-save" onclick="saveModalDate()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DAYS = [
+  {title:"Chegada e Navy Pier",theme:"🚢",places:[
+    {name:"Navy Pier",note:"Passeio na orla, Centennial Wheel. A pé do hotel (~2 min).",tip:"Fogos às quartas e sábados!",lat:41.8919,lng:-87.6051},
+    {name:"Chicago Children's Museum",note:"Dentro do Navy Pier. Bebês entram grátis.",lat:41.8914,lng:-87.6091}
+  ]},
+  {title:"Millennium Park e The Bean",theme:"🫘",places:[
+    {name:"Millennium Park — The Bean",note:"Ir cedo (9h) para menos gente.",lat:41.8826,lng:-87.6226},
+    {name:"Maggie Daley Park",note:"Playground enorme, ótimo para a Olivia!",lat:41.8824,lng:-87.6194},
+    {name:"Chicago Riverwalk",note:"Almoço à beira do rio.",lat:41.8885,lng:-87.6232}
+  ]},
+  {title:"Passeio de barco + Magnificent Mile",theme:"🏛️",places:[
+    {name:"Architecture Center River Cruise",note:"~90 min a bordo.",tip:"⚠️ Reservar com antecedência!",lat:41.8906,lng:-87.6165},
+    {name:"Magnificent Mile — Michigan Ave",note:"Tarde de compras.",lat:41.8914,lng:-87.6249}
+  ]},
+  {title:"Aquário Shedd",theme:"🐬",places:[
+    {name:"Shedd Aquarium",note:"Uber ~15 min ou CTA #146.",tip:"⚠️ Ingresso online (~$50, bebê grátis)",lat:41.8676,lng:-87.6140},
+    {name:"Grant Park",note:"Volta pelo parque, sorvete.",lat:41.8739,lng:-87.6199}
+  ]},
+  {title:"Descanso e Buckingham Fountain",theme:"⛲",places:[
+    {name:"Buckingham Fountain",note:"Jatos d'água — a Olivia vai adorar!",tip:"Show de luzes ao anoitecer",lat:41.8757,lng:-87.6189},
+    {name:"Riverwalk — tarde leve",note:"Sombra e restaurantes acessíveis.",lat:41.8885,lng:-87.6232}
+  ]},
+  {title:"Lincoln Park Zoo + Praia",theme:"🦁",places:[
+    {name:"Lincoln Park Zoo",note:"Uber ~20 min ou CTA #151.",tip:"⭐ ENTRADA GRATUITA!",lat:41.9217,lng:-87.6336},
+    {name:"North Avenue Beach",note:"10 min a pé do zoo. Água rasa para a Olivia.",lat:41.9172,lng:-87.6270}
+  ]},
+  {title:"Art Institute of Chicago",theme:"🎨",places:[
+    {name:"Art Institute of Chicago",note:"Abre 11h. Carrinho acessível.",tip:"⚠️ FECHADO ÀS TERÇAS!",lat:41.8796,lng:-87.6224},
+    {name:"Millennium Park — gramado",note:"Depois do museu, deixar a Olivia extravasar.",lat:41.8826,lng:-87.6226}
+  ]},
+  {title:"Museum of Science and Industry",theme:"🔬",places:[
+    {name:"Griffin Museum of Science and Industry",note:"Uber ~30 min. Dia inteiro.",tip:"⚠️ Ingresso online (~$25/adulto)",lat:41.7906,lng:-87.5831}
+  ]},
+  {title:"Dia livre + Riverwalk",theme:"🛍️",places:[
+    {name:"Riverwalk — souvenirs",note:"Manhã tranquila, últimas compras.",lat:41.8885,lng:-87.6232},
+    {name:"Navy Pier — última noite",note:"Fogos se for quarta ou sábado!",lat:41.8919,lng:-87.6051}
+  ]},
+  {title:"Partida",theme:"🏠",places:[
+    {name:"Millennium Park — última manhã",note:"Se o voo for à tarde.",lat:41.8826,lng:-87.6226}
+  ]}
+];
+
+const RESTAURANTS = [
+  {name:"Beatrix Streeterville",type:"Café / Brunch",emoji:"☕",note:"7 min a pé do hotel. Nota 4.7. Cadeirinha para bebê.",tip:"⭐ Melhor café da manhã da área",addr:"740 N Wabash Ave",lat:41.8944,lng:-87.6225},
+  {name:"Lou Malnati's",type:"Deep Dish Pizza",emoji:"🍕",note:"10 min a pé. Reservar pelo OpenTable. Pizza leva 40 min.",addr:"1 N Dearborn St",lat:41.8900,lng:-87.6248},
+  {name:"Robert's Pizza",type:"Pizza fina artesanal",emoji:"🍕",note:"8 min a pé. Vista pro lago. Premiada.",addr:"465 N McClurg Ct",lat:41.8906,lng:-87.6169},
+  {name:"Mr. Beef on Orleans",type:"Italian Beef",emoji:"🥩",note:"Uber ~12 min. Só almoço. Inspiração de The Bear.",tip:"Pedir 'hot and wet'",addr:"666 N Orleans St",lat:41.8944,lng:-87.6374},
+  {name:"Portillo's",type:"Hot Dog / Italian Beef",emoji:"🌭",note:"Uber ~10 min. Nota 4.4 com 24.000 avaliações.",addr:"100 W Ontario St",lat:41.8935,lng:-87.6315},
+  {name:"Frontera Grill",type:"Mexicano Michelin",emoji:"🌮",note:"Uber ~12 min. Bib Gourmand. Family friendly.",tip:"⚠️ Fechado às segundas. Reservar!",addr:"445 N Clark St",lat:41.8905,lng:-87.6308},
+  {name:"Giordano's",type:"Deep Dish • Navy Pier",emoji:"🍕",note:"Dentro do Navy Pier. Pedir com 45 min de antecedência.",addr:"600 E Grand Ave",lat:41.8918,lng:-87.6096},
+  {name:"Bar Sol",type:"Latino • Navy Pier",emoji:"🌮",note:"Dentro do Navy Pier. Vista do lago. Ótimo nos fogos.",addr:"600 E Grand Ave",lat:41.8913,lng:-87.6046},
+  {name:"Garrett Popcorn",type:"Snack",emoji:"🍿",note:"Navy Pier. Chicago Mix obrigatório!",tip:"Peça amostra grátis antes",addr:"600 E Grand Ave",lat:41.8918,lng:-87.6085}
+];
+
+const NUTRIENTS = [
+  {name:"Proteína",sub:"Carne, frango, peixe, ovo",per:30,color:"#1D9E75"},
+  {name:"Proteína Vegetal",sub:"Feijão, lentilha, tofu",per:30,color:"#5DCAA5"},
+  {name:"Carboidrato",sub:"Arroz, macarrão, batata",per:50,color:"#FAC775"},
+  {name:"Vegetais",sub:"Legumes, verduras",per:100,color:"#85B7EB"}
+];
+
+const MEALS = ["Café da manhã","Almoço","Jantar","Lanche da tarde"];
+
+let state = JSON.parse(localStorage.getItem('chicago_state') || '{}');
+if(!state.dates) state.dates = {};
+if(!state.mealChecks) state.mealChecks = {};
+let mealView = 'single';
+let servings = 2;
+let currentModalDay = null;
+
+function save(){localStorage.setItem('chicago_state',JSON.stringify(state));}
+
+function showTab(id, btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='mapa') initMap();
+}
+
+function updateCountdown(){
+  const el = document.getElementById('trip-countdown');
+  const start = state.tripStart;
+  if(!start){el.textContent='Defina a data de início acima';return;}
+  const now = new Date();
+  const trip = new Date(start+'T00:00:00');
+  const diff = Math.ceil((trip-now)/(1000*60*60*24));
+  if(diff>0) el.textContent=`Faltam ${diff} dias 🎉`;
+  else if(diff===0) el.textContent=`A viagem começa hoje! 🛫`;
+  else el.textContent=`Dia ${Math.abs(diff)+1} de viagem 📍`;
+}
+
+function updateTripDates(){
+  const val = document.getElementById('trip-start').value;
+  state.tripStart = val;
+  save();
+  renderDays();
+  updateCountdown();
+}
+
+function getDayDate(dayIndex){
+  if(!state.dates[dayIndex] && state.tripStart){
+    const d = new Date(state.tripStart+'T00:00:00');
+    d.setDate(d.getDate()+dayIndex);
+    return d.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  }
+  if(state.dates[dayIndex]){
+    const d = new Date(state.dates[dayIndex]+'T00:00:00');
+    return d.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  }
+  return null;
+}
+
+function renderDays(){
+  const c = document.getElementById('days-container');
+  c.innerHTML = DAYS.map((day,i)=>{
+    const dateStr = getDayDate(i);
+    const badgeClass = dateStr?'day-date-badge':'day-date-badge unset';
+    const badgeText = dateStr||'sem data';
+    const expanded = state['open_'+i]?'open':'';
+    const placesHtml = day.places.map(p=>`
+      <div class="place-item">
+        <div class="place-icon">${day.theme}</div>
+        <div class="place-info">
+          <h4>${p.name}</h4>
+          <p>${p.note}</p>
+          ${p.tip?`<span class="tip">${p.tip}</span>`:''}
+          <br><a class="maps-btn" href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank">
+            <i class="ti ti-map-pin" style="font-size:12px"></i> Ver no Maps
+          </a>
+        </div>
+      </div>`).join('');
+    return `
+    <div class="day-card">
+      <div class="day-header" onclick="toggleDay(${i})">
+        <div class="day-num">${i+1}</div>
+        <div class="day-info">
+          <h3>${day.title}</h3>
+          <p>${day.places.length} local${day.places.length>1?'is':''} · ${day.theme}</p>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="${badgeClass}">${badgeText}</span>
+          <i class="ti ti-chevron-down chevron ${expanded}" id="chev-${i}"></i>
+        </div>
+      </div>
+      <div class="day-body ${expanded}" id="body-${i}">
+        ${placesHtml}
+        <button class="day-set-date" onclick="openDateModal(${i},event)">
+          <i class="ti ti-calendar" style="font-size:14px;vertical-align:-2px"></i>
+          ${dateStr?'Alterar data':'Definir data para este dia'}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDay(i){
+  state['open_'+i] = !state['open_'+i];
+  save();
+  const body = document.getElementById('body-'+i);
+  const chev = document.getElementById('chev-'+i);
+  body.classList.toggle('open',state['open_'+i]);
+  chev.classList.toggle('open',state['open_'+i]);
+}
+
+function openDateModal(dayIndex, e){
+  e.stopPropagation();
+  currentModalDay = dayIndex;
+  document.getElementById('modal-title').textContent = `Data — Dia ${dayIndex+1}: ${DAYS[dayIndex].title}`;
+  const existing = state.dates[dayIndex];
+  if(existing) document.getElementById('modal-date-input').value = existing;
+  else if(state.tripStart){
+    const d = new Date(state.tripStart+'T00:00:00');
+    d.setDate(d.getDate()+dayIndex);
+    document.getElementById('modal-date-input').value = d.toISOString().split('T')[0];
+  }
+  document.getElementById('date-modal').classList.add('open');
+}
+
+function closeModal(e){if(e.target===document.getElementById('date-modal'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('date-modal').classList.remove('open');}
+function saveModalDate(){
+  const val = document.getElementById('modal-date-input').value;
+  if(val && currentModalDay!==null){
+    state.dates[currentModalDay]=val;
+    save();
+    renderDays();
+  }
+  closeModalDirect();
+}
+
+function initMap(){
+  const all = DAYS.flatMap((d,i)=>d.places.map(p=>({...p,day:i+1})));
+  const first = all[0];
+  const frame = document.getElementById('map-frame');
+  if(!frame.src || frame.src===''){
+    frame.src=`https://maps.google.com/maps?q=${first.lat},${first.lng}&z=13&output=embed`;
+  }
+  const legend = document.getElementById('map-legend-items');
+  legend.innerHTML = [
+    {color:'#1D9E75',label:'Pontos do roteiro'},
+    {color:'#EF9F27',label:'Restaurantes'}
+  ].map(l=>`<div class="legend-item"><div class="legend-dot" style="background:${l.color}"></div>${l.label}</div>`).join('');
+
+  const filters = document.getElementById('map-filters');
+  if(!filters.innerHTML){
+    ['Todos',...DAYS.map((_,i)=>`Dia ${i+1}`),'Restaurantes'].forEach((f,i)=>{
+      const btn = document.createElement('button');
+      btn.className='filter-btn'+(i===0?' active':'');
+      btn.textContent=f;
+      btn.onclick=()=>{
+        document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        if(f==='Todos'){frame.src=`https://maps.google.com/maps?q=${first.lat},${first.lng}&z=13&output=embed`;}
+        else if(f==='Restaurantes'){frame.src=`https://maps.google.com/maps?q=${RESTAURANTS[0].lat},${RESTAURANTS[0].lng}&z=14&output=embed`;}
+        else{const d=DAYS[i-1];if(d&&d.places[0]){const p=d.places[0];frame.src=`https://maps.google.com/maps?q=${p.lat},${p.lng}&z=15&output=embed`;}}
+      };
+      filters.appendChild(btn);
+    });
+  }
+}
+
+function setMealView(v, btn){
+  mealView=v;
+  document.querySelectorAll('.meal-toggle button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateNutrients();
+}
+
+function updateNutrients(){
+  servings = parseInt(document.getElementById('servings-slider').value);
+  document.getElementById('servings-val').textContent = servings;
+  const multiplier = mealView==='day'?2:1;
+  const list = document.getElementById('nutrients-list');
+  list.innerHTML = NUTRIENTS.map(n=>{
+    const amt = n.per * multiplier * (servings/2);
+    return `
+    <div class="nutrient-row">
+      <div class="nutrient-color" style="background:${n.color}"></div>
+      <div class="nutrient-label"><h4>${n.name}</h4><p>${n.sub}</p></div>
+      <div class="nutrient-amount">
+        <span>${Math.round(amt)}g</span>
+        <p>${mealView==='day'?'por dia':'por refeição'}</p>
+      </div>
+    </div>`;
+  }).join('');
+  const summary = document.getElementById('nutrient-summary');
+  const totDay = NUTRIENTS.reduce((a,n)=>a+n.per*2*(servings/2),0);
+  const totMeal = NUTRIENTS.reduce((a,n)=>a+n.per*(servings/2),0);
+  summary.innerHTML = [
+    {label:'Total/refeição',val:Math.round(totMeal)+'g'},
+    {label:'Total/dia',val:Math.round(totDay)+'g'},
+    {label:'Proteínas/dia',val:Math.round(60*(servings/2))+'g'},
+    {label:'Vegetais/dia',val:Math.round(200*(servings/2))+'g'}
+  ].map(s=>`<div class="summary-stat"><p>${s.label}</p><span>${s.val}</span></div>`).join('');
+}
+
+function renderMealChecklist(){
+  const today = new Date().toDateString();
+  const c = document.getElementById('meal-checklist');
+  c.innerHTML = MEALS.map(m=>{
+    const key = today+'_'+m;
+    const done = state.mealChecks[key];
+    return `<div class="check-item ${done?'done':''}" onclick="toggleMeal('${key}',this)">
+      <p>Refeição</p>
+      <h4>${done?'✓ ':''} ${m}</h4>
+    </div>`;
+  }).join('');
+}
+
+function toggleMeal(key, el){
+  state.mealChecks[key]=!state.mealChecks[key];
+  save();
+  el.classList.toggle('done',state.mealChecks[key]);
+  el.querySelector('h4').textContent = (state.mealChecks[key]?'✓ ':'')+key.split('_').slice(1).join('_');
+  renderMealChecklist();
+}
+
+function renderRestaurants(){
+  const c = document.getElementById('restaurants-list');
+  c.innerHTML = RESTAURANTS.map(r=>`
+    <div class="day-card" style="margin-bottom:10px">
+      <div style="padding:14px 16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-size:20px">${r.emoji}</span>
+              <div>
+                <h3 style="font-size:15px;font-weight:600">${r.name}</h3>
+                <p style="font-size:12px;color:#8e8e93">${r.type}</p>
+              </div>
+            </div>
+            <p style="font-size:13px;color:#3a3a3c;line-height:1.5;margin-bottom:4px">${r.note}</p>
+            ${r.tip?`<span class="tip">${r.tip}</span>`:''}
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;color:#8e8e93"><i class="ti ti-map-pin" style="font-size:12px;vertical-align:-1px"></i> ${r.addr}</span>
+          <a class="maps-btn" href="https://maps.google.com/?q=${r.lat},${r.lng}" target="_blank">
+            <i class="ti ti-map-pin" style="font-size:12px"></i> Maps
+          </a>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}
+if(state.tripStart) document.getElementById('trip-start').value=state.tripStart;
+renderDays();
+updateNutrients();
+renderMealChecklist();
+renderRestaurants();
+updateCountdown();
+</script>
+</body>
+</html>
