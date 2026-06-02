@@ -578,7 +578,7 @@ function updateNutrients(){
   const multiplier = mealView==='day'?2:1;
   const list = document.getElementById('nutrients-list');
   list.innerHTML = NUTRIENTS.map(n=>{
-    const amt = n.per * multiplier * (servings/2);
+    const amt = n.per * multiplier * (servings);
     return `
     <div class="nutrient-row">
       <div class="nutrient-color" style="background:${n.color}"></div>
@@ -590,13 +590,13 @@ function updateNutrients(){
     </div>`;
   }).join('');
   const summary = document.getElementById('nutrient-summary');
-  const totDay = NUTRIENTS.reduce((a,n)=>a+n.per*2*(servings/2),0);
-  const totMeal = NUTRIENTS.reduce((a,n)=>a+n.per*(servings/2),0);
+  const totDay = NUTRIENTS.reduce((a,n)=>a+n.per*2*(servings),0);
+  const totMeal = NUTRIENTS.reduce((a,n)=>a+n.per*(servings),0);
   summary.innerHTML = [
     {label:'Total/refeição',val:Math.round(totMeal)+'g'},
     {label:'Total/dia',val:Math.round(totDay)+'g'},
-    {label:'Proteínas/dia',val:Math.round(60*(servings/2))+'g'},
-    {label:'Vegetais/dia',val:Math.round(200*(servings/2))+'g'}
+    {label:'Proteínas/dia',val:Math.round(60*(servings))+'g'},
+    {label:'Vegetais/dia',val:Math.round(200*(servings))+'g'}
   ].map(s=>`<div class="summary-stat"><p>${s.label}</p><span>${s.val}</span></div>`).join('');
 }
 
