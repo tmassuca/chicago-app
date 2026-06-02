@@ -522,7 +522,7 @@ function renderRestaurants(){
     </div>`).join('');
 }
 
-if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js');}
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/chicago-app/sw.js', {scope: '/chicago-app/'});}
 if(state.tripStart) document.getElementById('trip-start').value=state.tripStart;
 renderDays();
 updateNutrients();
